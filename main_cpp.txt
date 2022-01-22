@@ -1,0 +1,70 @@
+#include <stdio.h>
+#include "byte_buffer2.hpp"
+
+int main(int argc, char *argv[])
+{
+    const char* name = "/Users/kimminchae/Downloads/FAT32_simple.mdf";
+    unsigned char buffer[0x60] = {0};
+    FILE* handle = fopen(name,"rb");
+    fread(buffer, 0x60, 1, handle);
+    ByteBuffer2 bb(buffer, 0x60);
+    
+    int bytes_per_sector = bb.skip(11).get_int16_le();
+    int sector_per_clustor = bb.get_int8();
+    int reserved_sector_count = bb.get_int16_le();
+    int num_of_fat = bb.get_int8();
+    int fat_size_32 = bb.skip(19).get_int32_le();
+    int root_directory_cluster = bb.skip(4).get_int32_le();
+
+    int cluster_size = bytes_per_sector*sector_per_clustor;
+    int reserved_sector_size = reserved_sector_count*bytes_per_sector;
+    int fat_size = fat_size_32*bytes_per_sector;
+    int fat_area_size = fat_size*num_of_fat;
+    int data_area_offset = reserved_sector_size + fat_area_size;
+    int root_directory_offset = data_area_offset + (2 - 2)*cluster_size;
+
+    fclose(handle);
+
+
+    unsigned char buffer2[0x60] = {0};
+    FILE* handle2 = fopen(name,"rb");
+    fread(buffer2, 0x60, 1, handle2);
+    ByteBuffer2 bb2(buffer2, 0x60);
+        int trash = bb2.get_int32_le();
+        printf("trash = %d\n", trash);
+    // int cluster[16];
+    // for(int i=0; i<1; i++){
+    //     cluster[i] = bb2.get_int32_le(reserved_sector_size);
+    //     printf("cluster [%d] = %d\n", i, cluster[i]);
+    // }
+    fclose(handle2);
+    
+    return 0;
+}
+
+// auto Fat32::init(istream ifs) -> bool
+// {
+//     try
+//     {suto buffer = io::read_sp(ifs, m_start_sector * 0x200, 0x200);
+//     if(buffer == nullptr)
+//         return false;
+
+//     suto sig = *(unit16_t *)(buffer.get() + 01fe);
+//     if(sig != 0xaa55)
+//         return false;
+
+//         m_br = new fat32::Br32(buffer.get(), 0, 0x200);
+
+//         if(m_br->bytes_per_sector() > 0x200);
+//             m_starts_sector /= (m+br->bytes_per_sector() / 0x200);
+
+//         m_fat0 = build_fat();
+//         if (m_fat0 == nullptr)
+//             return false;
+
+//         m_root_node = make_root_node();
+//     }
+//     catch(...){
+//         fat32.cpp
+//     }
+// }
